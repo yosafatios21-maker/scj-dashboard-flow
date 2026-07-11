@@ -511,9 +511,84 @@
     .kpi-table { font-size: 12px !important; }
     .kpi-table thead th, .kpi-table tbody td { padding: 6px 4px !important; }
   }
+
+  /* ── Login Screen ─────────────────────────────────────────────────────── */
+  .login-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  }
+  .login-box {
+    background: #1e293b; border-radius: 16px; padding: 48px 40px 40px;
+    width: 380px; max-width: 90vw;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .login-box .logo {
+    text-align: center; margin-bottom: 32px;
+  }
+  .login-box .logo h1 {
+    font-size: 22px; font-weight: 700; color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .login-box .logo h1 span { color: #00C2FF; }
+  .login-box .logo p {
+    font-size: 12px; color: #94a3b8; margin-top: 4px;
+  }
+  .login-box .field { margin-bottom: 18px; }
+  .login-box label {
+    display: block; font-size: 12px; font-weight: 500;
+    color: #94a3b8; margin-bottom: 6px; text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .login-box input {
+    width: 100%; padding: 12px 14px; border-radius: 8px;
+    border: 1px solid #334155; background: #0f172a;
+    color: #fff; font-size: 14px; font-family: inherit;
+    outline: none; transition: border-color 0.2s;
+  }
+  .login-box input:focus { border-color: #00C2FF; }
+  .login-box input::placeholder { color: #475569; }
+  .login-btn {
+    width: 100%; padding: 12px; border-radius: 8px;
+    border: none; background: #00C2FF; color: #0f172a;
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    cursor: pointer; transition: all 0.2s; margin-top: 8px;
+  }
+  .login-btn:hover { background: #38d0ff; }
+  .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .login-error {
+    text-align: center; color: #ef4444; font-size: 13px;
+    margin-top: 12px; min-height: 20px;
+  }
+  .login-box .footer {
+    text-align: center; margin-top: 24px;
+    font-size: 11px; color: #475569;
+  }
 </style>
 </head>
 <body>
+
+<!-- ─── LOGIN SCREEN ──────────────────────────────────────────────────────── -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="logo">
+      <h1>Samudera Caraka Jasa</h1>
+      <p>Sign in to SCJ Dashboard</p>
+    </div>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="Enter username" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="Enter password" autocomplete="off">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="footer">SCJ Dashboard v2.0 — Authorized access only</div>
+  </div>
+</div>
 
 <!-- Navigation -->
 <div class="nav-bar">
@@ -533,6 +608,7 @@
     <div class="filter-bar" id="filterPanel"></div>
     <button class="btn-clear" id="btnClear" onclick="clearAllFilters()" title="Clear all filters">✕ Clear All</button>
     <button class="btn-refresh" id="btnRefresh" onclick="refreshData()" title="Reload data from Excel file">⟳ Refresh Data</button>
+    <button class="btn-logout" onclick="logout()" title="Sign out" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">Logout</button>
   </div>
 </div>
 
@@ -541,6 +617,59 @@
 </div>
 
 <script>
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+let AUTH_TOKEN = localStorage.getItem('scj_token') || '';
+
+async function handleLogin() {
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+  btn.disabled = true; btn.textContent = 'Signing in...'; err.textContent = '';
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('loginUser').value,
+        password: document.getElementById('loginPass').value
+      })
+    });
+    const d = await r.json();
+    if (d.ok && d.token) {
+      AUTH_TOKEN = d.token;
+      localStorage.setItem('scj_token', d.token);
+      document.getElementById('loginOverlay').style.display = 'none';
+      initApp();
+    } else {
+      err.textContent = 'Invalid username or password';
+      btn.disabled = false; btn.textContent = 'Sign In';
+    }
+  } catch(e) {
+    err.textContent = 'Connection error: ' + e.message;
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+}
+
+function logout() {
+  AUTH_TOKEN = '';
+  localStorage.removeItem('scj_token');
+  document.getElementById('loginOverlay').style.display = 'flex';
+}
+
+async function checkAuth() {
+  if (!AUTH_TOKEN) return false;
+  try {
+    const r = await fetch('/api/check-auth', { headers: { 'x-auth-token': AUTH_TOKEN } });
+    const d = await r.json();
+    return d.ok;
+  } catch(e) { return false; }
+}
+
+document.getElementById('loginPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleLogin();
+});
+document.getElementById('loginUser').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginPass').focus();
+});
+
 let activeTab = 'commercial';
 let charts = {};
 let fullFilterOptions = null;
@@ -705,8 +834,8 @@ async function fetchWithFilter() {
   const comUrl = '/api/commercial-kpi?' + params.toString();
   try {
     const [dataRes, comRes] = await Promise.all([
-      fetch(url),
-      fetch(comUrl)
+      fetch(url, { headers: { 'x-auth-token': AUTH_TOKEN } }),
+      fetch(comUrl, { headers: { 'x-auth-token': AUTH_TOKEN } })
     ]);
     allData = await dataRes.json();
     commercialData = await comRes.json();
@@ -1053,7 +1182,7 @@ async function refreshData() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spin">⟳</span> Refreshing...';
   try {
-    const r = await fetch('/api/refresh');
+    const r = await fetch('/api/refresh', { headers: { 'x-auth-token': AUTH_TOKEN } });
     const data = await r.json();
     if (data.ok) {
       fullFilterOptions = null;
@@ -1079,7 +1208,21 @@ if (activeTab !== 'commercial') {
   document.querySelectorAll('.nav-link')[0].classList.remove('active');
   document.querySelectorAll('.nav-link')[1].classList.add('active');
 }
-loadData();
+// ─── INIT ──────────────────────────────────────────────────────────────────
+
+let appStarted = false;
+async function initApp() {
+  if (appStarted) return;
+  appStarted = true;
+  await loadData();
+}
+(async () => {
+  const authed = await checkAuth();
+  if (authed) {
+    document.getElementById('loginOverlay').style.display = 'none';
+    initApp();
+  }
+})();
 </script>
 </body>
 </html>

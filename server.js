@@ -3,11 +3,41 @@ const cors = require('cors');
 const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ─── AUTH ────────────────────────────────────────────────────────────────────
+
+const AUTH_USER = 'adminscj01';
+const AUTH_PASS = 'adminscj02';
+let authTokens = new Set();
+
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === AUTH_USER && password === AUTH_PASS) {
+    const token = crypto.randomBytes(32).toString('hex');
+    authTokens.add(token);
+    return res.json({ ok: true, token });
+  }
+  // ponytail: fixed credentials, single user — upgrade to DB if multi-user needed
+  return res.status(401).json({ ok: false, message: 'Invalid credentials' });
+});
+
+app.get('/api/check-auth', (req, res) => {
+  const token = req.headers['x-auth-token'] || req.query.token;
+  if (token && authTokens.has(token)) return res.json({ ok: true });
+  res.json({ ok: false });
+});
+
+function requireAuth(req, res, next) {
+  const token = req.headers['x-auth-token'] || req.query.token;
+  if (token && authTokens.has(token)) return next();
+  res.status(401).json({ ok: false, message: 'Unauthorized' });
+}
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 
@@ -421,7 +451,7 @@ const COMMERCIAL_TEAMS = ['ALPHA','CHARLIE','DELTA'];
 
 // ─── ROUTES ───────────────────────────────────────────────────────────────────
 
-app.get('/api/commercial-kpi', (req, res) => {
+app.get('/api/commercial-kpi', requireAuth, (req, res) => {
   let base = getRecords().filter(r => r.monthIdx >= 0 && COMMERCIAL_TEAMS.includes(r.team));
   function filterBy(recs, field, queryVal) {
     if (queryVal === undefined || queryVal === '') return recs;
@@ -491,7 +521,7 @@ function allMonths() {
   return [...new Set(m)].sort().map(i => ({ idx: i, name: MONTHS[i] }));
 }
 
-app.get('/api/data', (req, res) => {
+app.get('/api/data', requireAuth, (req, res) => {
   const allRecords = getRecords();
   let records = allRecords;
 
@@ -518,35 +548,35 @@ app.get('/api/data', (req, res) => {
   res.json(buildApiData(records));
 });
 
-app.get('/api/kpi-matrix', (req, res) => {
+app.get('/api/kpi-matrix', requireAuth, (req, res) => {
   res.json(buildApiData(getRecords()).kpiMatrix);
 });
 
-app.get('/api/gp-trend', (req, res) => {
+app.get('/api/gp-trend', requireAuth, (req, res) => {
   res.json(buildApiData(getRecords()).gpTrend);
 });
 
-app.get('/api/gp-by-team', (req, res) => {
+app.get('/api/gp-by-team', requireAuth, (req, res) => {
   res.json(buildApiData(getRecords()).gpByTeam);
 });
 
-app.get('/api/kpi-volume-by-team', (req, res) => {
+app.get('/api/kpi-volume-by-team', requireAuth, (req, res) => {
   res.json(buildApiData(getRecords()).kpiVolumeByTeam);
 });
 
-app.get('/api/top-sales', (req, res) => {
+app.get('/api/top-sales', requireAuth, (req, res) => {
   res.json(buildApiData(getRecords()).topSales);
 });
 
-app.get('/api/branch-performance', (req, res) => {
+app.get('/api/branch-performance', requireAuth, (req, res) => {
   res.json(buildApiData(getRecords()).branchPerf);
 });
 
-app.get('/api/team-performance', (req, res) => {
+app.get('/api/team-performance', requireAuth, (req, res) => {
   res.json(buildApiData(getRecords()).teamPerf);
 });
 
-app.get('/api/refresh', (req, res) => {
+app.get('/api/refresh', requireAuth, (req, res) => {
   cachedRecords = null;
   const all = loadAndProcessData();
   cachedRecords = all;
