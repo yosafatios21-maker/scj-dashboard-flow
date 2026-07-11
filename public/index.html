@@ -386,6 +386,18 @@
   }
   .btn-clear:hover { background: var(--danger-dim); color: var(--danger); border-color: var(--danger); }
 
+  /* ── Upload Button ─────────────────────────────────────────────────────── */
+  .btn-upload {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 7px 12px; background: transparent; color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 500; font-family: inherit;
+    cursor: pointer; white-space: nowrap; margin-top: 16px;
+    transition: all 0.2s;
+  }
+  .btn-upload:hover { background: var(--primary-dim); color: var(--primary); border-color: var(--primary); }
+  .btn-upload:disabled { opacity: 0.5; cursor: wait; }
+
   /* ── Logout Button ─────────────────────────────────────────────────────── */
   .btn-logout {
     display: inline-flex; align-items: center; gap: 4px;
@@ -619,7 +631,9 @@
     <div class="filter-bar" id="filterPanel"></div>
     <button class="btn-clear" id="btnClear" onclick="clearAllFilters()" title="Clear all filters">✕ Clear All</button>
     <button class="btn-refresh" id="btnRefresh" onclick="refreshData()" title="Reload data from Excel file">⟳ Refresh Data</button>
+    <button class="btn-upload" id="btnUpload" onclick="document.getElementById('fileInput').click()" title="Upload Excel file (.xls/.xlsx)">↑ Upload Data</button>
     <button class="btn-logout" onclick="logout()" title="Sign out">Logout</button>
+    <input type="file" id="fileInput" accept=".xls,.xlsx" style="display:none" onchange="uploadFile(this)">
   </div>
 </div>
 
@@ -1205,6 +1219,37 @@ async function refreshData() {
     btn.innerHTML = '✗ Failed';
     setTimeout(() => { btn.innerHTML = '⟳ Refresh Data'; btn.disabled = false; }, 3000);
   }
+}
+
+async function uploadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const btn = document.getElementById('btnUpload');
+  btn.innerHTML = '⏳ Uploading...';
+  btn.disabled = true;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const r = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-auth-token': AUTH_TOKEN },
+        body: JSON.stringify({ file: e.target.result })
+      });
+      const data = await r.json();
+      if (data.ok) {
+        fullFilterOptions = null;
+        await fetchWithFilter();
+        btn.innerHTML = '✓ Uploaded';
+      } else {
+        btn.innerHTML = '✗ ' + (data.message || 'Failed');
+      }
+    } catch(e) {
+      btn.innerHTML = '✗ Failed';
+    }
+    setTimeout(() => { btn.innerHTML = '↑ Upload Data'; btn.disabled = false; }, 2500);
+    input.value = '';
+  };
+  reader.readAsDataURL(file);
 }
 
 function fmt(n) {

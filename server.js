@@ -584,6 +584,26 @@ app.get('/api/refresh', requireAuth, (req, res) => {
   res.json({ ok: true, records: all.length, totalGP: Math.round(totalGP * 100) / 100 });
 });
 
+// ─── UPLOAD: replace Excel file from dashboard ───────────────────────────────
+// ponytail: uses base64 JSON to avoid multer/formidable dependency
+app.post('/api/upload', requireAuth, (req, res) => {
+  const { file: dataUrl } = req.body;
+  if (!dataUrl) return res.status(400).json({ ok: false, message: 'No file provided' });
+
+  const base64 = dataUrl.replace(/^data:.+;base64,/, '');
+  fs.writeFileSync(EXCEL_PATH, Buffer.from(base64, 'base64'));
+
+  cachedRecords = null;
+  try {
+    const all = loadAndProcessData();
+    cachedRecords = all;
+    const totalGP = all.filter(r => r.monthIdx >= 0).reduce((s, r) => s + r.gp, 0);
+    res.json({ ok: true, records: all.length, totalGP: Math.round(totalGP * 100) / 100 });
+  } catch (e) {
+    res.status(400).json({ ok: false, message: e.message });
+  }
+});
+
 // ─── FILE WATCHER: auto-refresh when Excel changes ──────────────────────────
 
 console.log(`👀 Watching for changes: ${path.basename(EXCEL_PATH)}`);
