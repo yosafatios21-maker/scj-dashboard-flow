@@ -386,6 +386,17 @@
   }
   .btn-clear:hover { background: var(--danger-dim); color: var(--danger); border-color: var(--danger); }
 
+  /* ── Logout Button ─────────────────────────────────────────────────────── */
+  .btn-logout {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 7px 12px; background: transparent; color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 500; font-family: inherit;
+    cursor: pointer; white-space: nowrap; margin-top: 16px;
+    transition: all 0.2s;
+  }
+  .btn-logout:hover { background: var(--danger-dim); color: var(--danger); border-color: var(--danger); }
+
   /* ── Contribution bar ──────────────────────────────────────────────────── */
   .contrib-bar {
     width: 100px; height: 10px; background: var(--bg); border-radius: 5px;
@@ -586,7 +597,7 @@
     </div>
     <button class="login-btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
     <div class="login-error" id="loginError"></div>
-    <div class="footer">SCJ Dashboard v2.0 — Authorized access only</div>
+    <div class="footer"></div>
   </div>
 </div>
 
@@ -608,7 +619,7 @@
     <div class="filter-bar" id="filterPanel"></div>
     <button class="btn-clear" id="btnClear" onclick="clearAllFilters()" title="Clear all filters">✕ Clear All</button>
     <button class="btn-refresh" id="btnRefresh" onclick="refreshData()" title="Reload data from Excel file">⟳ Refresh Data</button>
-    <button class="btn-logout" onclick="logout()" title="Sign out" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">Logout</button>
+    <button class="btn-logout" onclick="logout()" title="Sign out">Logout</button>
   </div>
 </div>
 
