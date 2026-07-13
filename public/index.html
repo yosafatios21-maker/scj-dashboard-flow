@@ -901,11 +901,7 @@ function renderDashboard() {
   const app = document.getElementById('app');
 
   if (activeTab === 'commercial') {
-    let html = '<div class="target-info"><span>Management KPI Targets: &nbsp;' +
-      '<span class="g">Green ≥ 100%</span> · <span class="y">Yellow 80–99.99%</span> · <span class="r">Red &lt; 80%</span>' +
-      '</span></div>';
-
-    html += '<div class="team-row">';
+    let html = '<div class="team-row">';
     teams.forEach(t => {
       const meta = TEAM_META[t];
       const tot = totals[t] || { actual: 0, pct: 0 };
