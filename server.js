@@ -160,7 +160,7 @@ function calcVolume(uom, row) {
       return pieces;
     }
     case 'KG':
-      return weightLb * 0.453592;
+      return (parseNum(row[32]) || parseNum(row[29])) / 2.20462;
     case 'CBM':
       return volumeFt * 0.0283168;
     case 'TRIP':
@@ -409,7 +409,8 @@ function buildApiData(records) {
       contractHolders,
       teams: [...new Set(activeRecs.map(r => r.team).filter(Boolean))].sort(),
       branches: [...new Set(activeRecs.map(r => r.branch).filter(Boolean))].sort(),
-      prefixes, carriers, origins, regions
+      prefixes, carriers, origins, regions,
+      sales: [...new Set(activeRecs.map(r => r.sales).filter(Boolean))].sort()
     },
     summary: {
       totalGP: Math.round(totalGP * 100) / 100,
@@ -464,6 +465,7 @@ app.get('/api/commercial-kpi', requireAuth, (req, res) => {
   base = filterBy(base, 'contractHolderClean', req.query.contractHolder);
   base = filterBy(base, 'team', req.query.team);
   base = filterBy(base, 'branch', req.query.branch);
+  base = filterBy(base, 'sales', req.query.sales);
   base = filterBy(base, 'prefix', req.query.prefix);
   base = filterBy(base, 'carrier', req.query.carrier);
   base = filterBy(base, 'origin', req.query.origin);
@@ -541,6 +543,7 @@ app.get('/api/data', requireAuth, (req, res) => {
   records = filterBy(records, 'contractHolderClean', req.query.contractHolder);
   records = filterBy(records, 'team', req.query.team);
   records = filterBy(records, 'branch', req.query.branch);
+  records = filterBy(records, 'sales', req.query.sales);
   records = filterBy(records, 'prefix', req.query.prefix);
   records = filterBy(records, 'carrier', req.query.carrier);
   records = filterBy(records, 'origin', req.query.origin);

@@ -709,8 +709,9 @@ const FILTER_DEFS = [
   { key: 'month', label: 'Month', getOpts: () => fullFilterOptions.months.map(m => ({ val: String(m.idx), text: m.name })) },
   { key: 'contractHolder', label: 'Customer', getOpts: () => fullFilterOptions.contractHolders.map(v => ({ val: v, text: v })) },
   { key: 'team', label: 'Team', getOpts: () => fullFilterOptions.teams.map(v => ({ val: v, text: v })) },
-  { key: 'branch', label: 'Branch', getOpts: () => fullFilterOptions.branches.map(v => ({ val: v, text: v })) },
+  { key: 'sales', label: 'Sales', getOpts: () => (fullFilterOptions.sales || []).map(v => ({ val: v, text: v })) },
   { key: 'prefix', label: 'Prefix', getOpts: () => fullFilterOptions.prefixes.map(v => ({ val: v, text: v })) },
+  { key: 'branch', label: 'Branch', getOpts: () => fullFilterOptions.branches.map(v => ({ val: v, text: v })) },
   { key: 'carrier', label: 'Carrier', getOpts: () => fullFilterOptions.carriers.map(v => ({ val: v, text: v })) },
   { key: 'origin', label: 'Origin', getOpts: () => fullFilterOptions.origins.map(v => ({ val: v, text: v })) },
   { key: 'region', label: 'Region', getOpts: () => fullFilterOptions.regions.map(v => ({ val: v, text: v })) }
